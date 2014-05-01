@@ -18,8 +18,11 @@
 
 package org.jboss.logging;
 
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.MDC;
@@ -28,6 +31,21 @@ import org.jboss.logmanager.NDC;
 import static org.jboss.logmanager.Logger.AttachmentKey;
 
 final class JBossLogManagerProvider implements LoggerProvider {
+
+    private final boolean useObjects;
+
+    JBossLogManagerProvider() {
+        // Use reflection to determine which MDC method to use
+        final List<Method> methods = Arrays.asList(MDC.class.getMethods());
+        boolean found = false;
+        for (Method method : methods) {
+            if ("getObject".equals(method.getName())) {
+                found = true;
+                break;
+            }
+        }
+        useObjects = found;
+    }
 
     private static final AttachmentKey<Logger> KEY = new AttachmentKey<Logger>();
 
@@ -60,19 +78,32 @@ final class JBossLogManagerProvider implements LoggerProvider {
     }
 
     public Object putMdc(final String key, final Object value) {
+        if (useObjects) {
+            return MDC.putObject(key, value);
+        }
         return MDC.put(key, String.valueOf(value));
     }
 
     public Object getMdc(final String key) {
+        if (useObjects) {
+            return MDC.getObject(key);
+        }
         return MDC.get(key);
     }
 
     public void removeMdc(final String key) {
-        MDC.remove(key);
+        if (useObjects) {
+            MDC.removeObject(key);
+        } else {
+            MDC.remove(key);
+        }
     }
 
     @SuppressWarnings({ "unchecked" })
     public Map<String, Object> getMdcMap() {
+        if (useObjects) {
+            return MDC.copyObject();
+        }
         // we can re-define the erasure of this map because MDC does not make further use of the copy
         return (Map)MDC.copy();
     }
