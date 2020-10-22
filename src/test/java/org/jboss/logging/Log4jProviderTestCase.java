@@ -18,6 +18,7 @@
 
 package org.jboss.logging;
 
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -52,6 +53,16 @@ public class Log4jProviderTestCase extends AbstractLoggerTestCase {
     public void removeAppender() {
         org.apache.log4j.Logger.getLogger(logger.getName()).removeAppender(appender);
         appender.close();
+    }
+
+    @Test
+    public void testHandlers() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger.getName()));
+    }
+
+    @Test
+    public void testHandlersLogger() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger));
     }
 
     @Test

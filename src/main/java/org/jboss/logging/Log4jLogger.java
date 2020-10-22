@@ -31,6 +31,10 @@ final class Log4jLogger extends Logger {
         logger = org.apache.log4j.Logger.getLogger(name);
     }
 
+    org.apache.log4j.Logger getDelegate() {
+        return logger;
+    }
+
     public boolean isEnabled(final Level level) {
         final org.apache.log4j.Level l = translate(level);
         return logger.isEnabledFor(l) && l.isGreaterOrEqual(logger.getEffectiveLevel());

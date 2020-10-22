@@ -18,6 +18,7 @@
 
 package org.jboss.logging;
 
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Handler;
@@ -52,6 +53,16 @@ public class JulProviderTestCase extends AbstractLoggerTestCase {
     public void removeHandler() {
         java.util.logging.Logger.getLogger(logger.getName()).removeHandler(handler);
         handler.close();
+    }
+
+    @Test
+    public void testHandlers() {
+        Assertions.assertEquals(Collections.singleton(handler), LogManagerProvider.getInstance().getHandlers(logger.getName()));
+    }
+
+    @Test
+    public void testHandlersLogger() {
+        Assertions.assertEquals(Collections.singleton(handler), LogManagerProvider.getInstance().getHandlers(logger));
     }
 
     @Test

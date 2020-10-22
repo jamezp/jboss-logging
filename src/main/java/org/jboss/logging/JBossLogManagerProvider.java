@@ -20,9 +20,17 @@ package org.jboss.logging;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.MDC;
@@ -56,6 +64,38 @@ final class JBossLogManagerProvider implements LoggerProvider {
             // fallback
             return doLegacyGetLogger(name);
         }
+    }
+
+    @Override
+    public Set<Logger> getLoggers() {
+        return Collections.list(LogManager.getLogManager().getLoggerNames())
+                .stream()
+                .map(Logger::getLogger)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> getLoggerNames() {
+        return new LinkedHashSet<>(Collections.list(LogManager.getLogManager().getLoggerNames()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final String name) {
+        final LogContext logContext = LogContext.getLogContext();
+        final org.jboss.logmanager.Logger logger = logContext.getLoggerIfExists(name);
+        if (logger == null) {
+            return Collections.emptySet();
+        }
+        final Handler[] handlers = logger.getHandlers();
+        return handlers == null ? Collections.emptySet() : new LinkedHashSet<>(Arrays.asList(handlers));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final Logger logger) {
+        // TODO (jrp) this can be done better
+        return getHandlers(logger.getName());
     }
 
     private static Logger doLegacyGetLogger(final String name) {

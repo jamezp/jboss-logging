@@ -18,9 +18,15 @@
 
 package org.jboss.logging;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.MDC;
 import org.apache.log4j.NDC;
 
@@ -82,5 +88,30 @@ final class Log4jLoggerProvider implements LoggerProvider {
 
     public void setNdcMaxDepth(int maxDepth) {
         NDC.setMaxDepth(maxDepth);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Set<String> getLoggerNames() {
+        return Collections.list((Enumeration<org.apache.log4j.Logger>) LogManager.getCurrentLoggers())
+                .stream()
+                .map(org.apache.log4j.Logger::getName)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Appender> getHandlers(final String name) {
+        return Collections.list((Enumeration<Appender>) org.apache.log4j.Logger.getLogger(name).getAllAppenders());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Appender> getHandlers(final Logger logger) {
+        if (logger instanceof Log4jLogger) {
+            return Collections.list((Enumeration<Appender>) ((Log4jLogger) logger).getDelegate().getAllAppenders());
+        }
+        // This should never happen
+        throw new IllegalArgumentException(String.format("Logger %s is not a log4j Logger.", logger));
     }
 }
