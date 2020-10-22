@@ -18,9 +18,37 @@
 
 package org.jboss.logging;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+
 final class JDKLoggerProvider extends AbstractMdcLoggerProvider implements LoggerProvider {
 
     public Logger getLogger(final String name) {
         return new JDKLogger(name);
+    }
+
+    @Override
+    public Set<String> getLoggerNames() {
+        return new LinkedHashSet<>(Collections.list(LogManager.getLogManager().getLoggerNames()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final String name) {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(name);
+        final Handler[] handlers = logger.getHandlers();
+        return handlers == null ? Collections.emptySet() : new LinkedHashSet<>(Arrays.asList(handlers));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final Logger logger) {
+        // TODO (jrp) this can be done better
+        return getHandlers(logger.getName());
     }
 }

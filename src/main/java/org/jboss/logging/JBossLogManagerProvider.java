@@ -20,9 +20,17 @@ package org.jboss.logging;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.MDC;
@@ -32,21 +40,19 @@ import static org.jboss.logmanager.Logger.AttachmentKey;
 
 final class JBossLogManagerProvider implements LoggerProvider {
 
-    private static final AttachmentKey<Logger> KEY = new AttachmentKey<Logger>();
-    private static final AttachmentKey<ConcurrentMap<String, Logger>> LEGACY_KEY = new AttachmentKey<ConcurrentMap<String, Logger>>();
+    private static final AttachmentKey<Logger> KEY = new AttachmentKey<>();
+    private static final AttachmentKey<ConcurrentMap<String, Logger>> LEGACY_KEY = new AttachmentKey<>();
 
     public Logger getLogger(final String name) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
-                public Logger run() {
-                    try {
-                        return doGetLogger(name) ;
-                    } catch (NoSuchMethodError ignore) {
-                    }
-                    // fallback
-                    return doLegacyGetLogger(name);
+            return AccessController.doPrivileged((PrivilegedAction<Logger>) () -> {
+                try {
+                    return doGetLogger(name) ;
+                } catch (NoSuchMethodError ignore) {
                 }
+                // fallback
+                return doLegacyGetLogger(name);
             });
         } else {
             try {
@@ -58,11 +64,43 @@ final class JBossLogManagerProvider implements LoggerProvider {
         }
     }
 
+    @Override
+    public Set<Logger> getLoggers() {
+        return Collections.list(LogManager.getLogManager().getLoggerNames())
+                .stream()
+                .map(Logger::getLogger)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> getLoggerNames() {
+        return new LinkedHashSet<>(Collections.list(LogManager.getLogManager().getLoggerNames()));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final String name) {
+        final LogContext logContext = LogContext.getLogContext();
+        final org.jboss.logmanager.Logger logger = logContext.getLoggerIfExists(name);
+        if (logger == null) {
+            return Collections.emptySet();
+        }
+        final Handler[] handlers = logger.getHandlers();
+        return handlers == null ? Collections.emptySet() : new LinkedHashSet<>(Arrays.asList(handlers));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<Handler> getHandlers(final Logger logger) {
+        // TODO (jrp) this can be done better
+        return getHandlers(logger.getName());
+    }
+
     private static Logger doLegacyGetLogger(final String name) {
         final org.jboss.logmanager.Logger lmLogger = LogContext.getLogContext().getLogger("");
         ConcurrentMap<String, Logger> loggers = lmLogger.getAttachment(LEGACY_KEY);
         if (loggers == null) {
-            loggers = new ConcurrentHashMap<String, Logger>();
+            loggers = new ConcurrentHashMap<>();
             final ConcurrentMap<String, Logger> appearing = lmLogger.attachIfAbsent(LEGACY_KEY, loggers);
             if (appearing != null) {
                 loggers = appearing;

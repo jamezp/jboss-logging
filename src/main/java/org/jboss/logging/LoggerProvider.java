@@ -18,13 +18,15 @@
 
 package org.jboss.logging;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A contract for the log provider implementation.
  */
-public interface LoggerProvider {
+public interface LoggerProvider extends LogManagerProvider {
     /**
      * Returns a logger which is backed by a logger from the log provider.
      *
@@ -37,6 +39,21 @@ public interface LoggerProvider {
      * @return a logger for the log provider logger.
      */
     Logger getLogger(String name);
+
+    @Override
+    default Set<String> getLoggerNames() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    default <T> Collection<T> getHandlers(final String name) {
+        return Collections.emptySet();
+    }
+
+    @Override
+    default <T> Collection<T> getHandlers(final Logger logger) {
+        return Collections.emptySet();
+    }
 
     /**
      * Removes all entries from the message diagnostics context.

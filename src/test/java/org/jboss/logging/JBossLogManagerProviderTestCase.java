@@ -18,6 +18,7 @@
 
 package org.jboss.logging;
 
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,6 +74,16 @@ public class JBossLogManagerProviderTestCase extends AbstractLoggerTestCase {
     public void closeLogContext() throws Exception {
         logContext.close();
         LogContext.setLogContextSelector(DEFAULT_SELECTOR);
+    }
+
+    @Test
+    public void testHandlers() {
+        Assertions.assertEquals(Collections.singleton(handler), LogManagerProvider.getInstance().getHandlers(logger.getName()));
+    }
+
+    @Test
+    public void testHandlersLogger() {
+        Assertions.assertEquals(Collections.singleton(handler), LogManagerProvider.getInstance().getHandlers(logger));
     }
 
     @Test

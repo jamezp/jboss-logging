@@ -18,6 +18,9 @@
 
 package org.jboss.logging;
 
+import java.util.Iterator;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -85,6 +88,37 @@ abstract class AbstractLoggerTestCase {
     public void testFatal() {
         getLogger().fatal("Test log level FATAL");
         testLog("Test log level FATAL", Logger.Level.FATAL);
+    }
+
+    @Test
+    public void testLoggerNames() {
+        final Logger logger = getLogger();
+        final Set<String> names = LogManagerProvider.getInstance().getLoggerNames();
+        Assertions.assertTrue(names.contains(logger.getName()));
+    }
+
+    @Test
+    public void testLoggers() {
+        final Logger logger = getLogger();
+        final Set<Logger> loggers = LogManagerProvider.getInstance().getLoggers();
+        // The provider may not cache loggers so we should just ensure there is one with the same name as the one we
+        // expect
+        final StringBuilder failureMsg = new StringBuilder()
+                .append("Expected logger \"")
+                .append(logger.getName())
+                .append("\" found ");
+        final Iterator<Logger> iter = loggers.iterator();
+        while (iter.hasNext()) {
+            final Logger found = iter.next();
+            if (found.getName().equals(logger.getName())) {
+                return;
+            }
+            failureMsg.append('"').append(found.getName()).append('"');
+            if (iter.hasNext()) {
+                failureMsg.append(", ");
+            }
+        }
+        Assertions.fail(failureMsg.toString());
     }
 
     abstract void testLog(Logger.Level level);

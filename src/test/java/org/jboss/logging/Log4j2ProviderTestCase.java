@@ -19,6 +19,7 @@
 package org.jboss.logging;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -58,6 +59,16 @@ public class Log4j2ProviderTestCase extends AbstractLoggerTestCase {
         final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         final Configuration config = ctx.getConfiguration();
         appender = (TestAppender) config.getAppenders().get("TestAppender");
+    }
+
+    @Test
+    public void testHandlers() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger.getName()));
+    }
+
+    @Test
+    public void testHandlersLogger() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger));
     }
 
     @Test

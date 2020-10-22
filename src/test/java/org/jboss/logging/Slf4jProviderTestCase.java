@@ -18,6 +18,7 @@
 
 package org.jboss.logging;
 
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -55,6 +56,16 @@ public class Slf4jProviderTestCase extends AbstractLoggerTestCase {
         ch.qos.logback.classic.Logger lbLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(logger.getName());
         lbLogger.detachAppender(appender);
         appender.stop();
+    }
+
+    @Test
+    public void testHandlers() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger.getName()));
+    }
+
+    @Test
+    public void testHandlersLogger() {
+        Assertions.assertEquals(Collections.singletonList(appender), LogManagerProvider.getInstance().getHandlers(logger));
     }
 
     @Test
